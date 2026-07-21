@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>Budget</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#f5f4f0;--bg2:#edecea;--bg3:#e3e2de;--border:#d0cfc9;--border2:#bbb;
+  --text:#1a1a18;--text2:#666660;--text3:#aaa9a0;
+  --green:#0d7a4e;--green-bg:#e6f4ed;
+  --red:#c0392b;--red-bg:#fdecea;
+  --blue:#1a4fa0;--blue-bg:#e8eef8;
+  --orange:#d4680a;--orange-bg:#fef3e8;
+  --mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;
+  --r:8px;--r-sm:5px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;min-height:100vh;-webkit-font-smoothing:antialiased}
+input,select,button{font-family:var(--sans);font-size:14px}
+.app{max-width:900px;margin:0 auto;padding:20px 14px 80px}
+.hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid var(--border)}
+.hdr-title{font-family:var(--mono);font-size:12px;color:var(--text3);letter-spacing:.1em;text-transform:uppercase}
+.sync-badge{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;color:var(--text3)}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0}
+.sync-dot.warn{background:#e67e22}.sync-dot.err{background:var(--red)}.sync-dot.spin{background:var(--text3);animation:blink .8s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:18px}
+@media(max-width:580px){.kpis{grid-template-columns:repeat(2,1fr)}}
+.kpi{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:12px 14px}
+.kpi-label{font-family:var(--mono);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+.kpi-val{font-family:var(--mono);font-size:17px;font-weight:500}
+.kpi-val.pos{color:var(--green)}.kpi-val.neg{color:var(--red)}
+.kpi-sub{font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:3px}
+.tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:16px}
+.tab{padding:8px 16px;font-size:13px;font-family:var(--mono);cursor:pointer;border:none;background:none;color:var(--text3);border-bottom:2px solid transparent;margin-bottom:-1px;letter-spacing:.03em}
+.tab:hover{color:var(--text)}.tab.active{color:var(--text);border-bottom-color:var(--text)}
+.addbar{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:12px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end}
+.field{display:flex;flex-direction:column;gap:4px}
+.field.grow{flex:1;min-width:120px}
+.field.w100{width:100px}.field.w120{width:120px}.field.w90{width:90px}
+label{font-family:var(--mono);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em}
+input[type=text],input[type=number],input[type=date],select{
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-sm);
+  color:var(--text);padding:7px 9px;outline:none;width:100%;transition:border-color .12s;
+  -webkit-appearance:none;appearance:none
+}
+input:focus,select:focus{border-color:var(--text2)}
+select{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23999'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;padding-right:24px}
+.dtog{display:inline-flex;border:1px solid var(--border);border-radius:20px;overflow:hidden;margin-bottom:8px}
+.dtog button{padding:4px 12px;border:none;background:none;cursor:pointer;color:var(--text3);font-size:12px;font-family:var(--mono)}
+.dtog button.on{background:var(--text);color:#fff}
+.btn{padding:7px 14px;border-radius:var(--r-sm);border:1px solid var(--border);background:#fff;color:var(--text);cursor:pointer;font-size:13px;transition:all .12s;white-space:nowrap}
+.btn:hover{background:var(--bg2)}
+.btn-primary{background:var(--text);color:#fff;border-color:var(--text)}
+.btn-primary:hover{opacity:.85}
+.btn-sm{padding:4px 10px;font-size:12px}
+.btn-ghost{border-color:transparent;background:none;color:var(--text3);padding:4px 8px}
+.btn-ghost:hover{color:var(--red);background:var(--red-bg);border-color:transparent}
+.tbl-wrap{background:#fff;border:1px solid var(--border);border-radius:var(--r);overflow:hidden;overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:580px}
+th{text-align:left;padding:8px 10px;font-family:var(--mono);font-size:9px;font-weight:400;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;border-bottom:1px solid var(--border);background:var(--bg2)}
+td{padding:0;border-bottom:1px solid var(--border)}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover{background:var(--bg)}
+tbody tr.dragging{opacity:.3}
+tbody tr.over td:first-child{border-left:3px solid var(--green)}
+/* Ligne future = légèrement estompée */
+tbody tr.future-row{}
+
+.cell{padding:8px 10px;display:flex;align-items:center;gap:4px}
+.handle{cursor:grab;color:var(--text3);font-size:14px;padding:0 2px;user-select:none;flex-shrink:0}
+.handle:active{cursor:grabbing}
+.editable{border-radius:4px;padding:2px 4px;outline:none;cursor:text;transition:background .1s;font-family:var(--mono);font-size:12px;min-width:20px}
+.editable:hover{background:var(--bg2)}.editable:focus{background:var(--bg2);box-shadow:0 0 0 1.5px var(--border2)}
+.badge-range{display:inline-flex;align-items:center;gap:4px;font-family:var(--mono);font-size:11px;padding:2px 8px;border-radius:20px;background:var(--blue-bg);color:var(--blue);white-space:nowrap}
+.badge-range.future{background:var(--orange-bg);color:var(--orange)}
+.group-head{background:var(--bg2)}
+.group-head:hover{background:var(--bg3)}
+.grp-toggle{background:none;border:none;cursor:pointer;color:var(--text2);font-size:12px;padding:2px 4px;width:100%;text-align:left}
+.sub-row{background:#fafaf8}
+.sub-row.sub-hidden{display:none}
+.sub-handle{opacity:.5}
+.sub-row .cell{padding:6px 10px}
+.date-txt{font-family:var(--mono);font-size:12px;color:var(--text2)}
+.ttog{display:inline-flex;border:1px solid var(--border);border-radius:20px;overflow:hidden;font-size:11px;font-family:var(--mono)}
+.ttog button{padding:2px 8px;border:none;background:none;cursor:pointer;color:var(--text3)}
+.ttog button.dep{background:var(--red-bg);color:var(--red)}
+.ttog button.rev{background:var(--green-bg);color:var(--green)}
+.amt-dep{color:var(--red);font-family:var(--mono);font-size:12px}
+.amt-rev{color:var(--green);font-family:var(--mono);font-size:12px}
+.solde{font-family:var(--mono);font-size:12px;font-weight:500}
+.solde.pos{color:var(--green)}.solde.neg{color:var(--red)}
+.divider-today td{padding:0;border:none}
+.divider-today .divider-inner{background:var(--orange-bg);border-top:1px solid var(--orange);border-bottom:1px solid var(--orange);padding:3px 10px;font-family:var(--mono);font-size:10px;color:var(--orange);display:flex;align-items:center;gap:6px}
+.sec{margin-bottom:20px}
+.sec-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.sec-ttl{font-family:var(--mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em}
+.proj-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
+.proj-item:last-child{border-bottom:none}
+.proj-mon{font-family:var(--mono);font-size:12px;min-width:72px;color:var(--text2)}
+.proj-bg{flex:1;height:5px;background:var(--bg3);border-radius:3px;overflow:hidden}
+.proj-fill{height:100%;border-radius:3px;transition:width .3s}
+.proj-v{font-family:var(--mono);font-size:12px;min-width:80px;text-align:right;font-weight:500}
+.proj-detail{font-family:var(--mono);font-size:10px;color:var(--text3);min-width:160px;text-align:right}
+.chart-wrap{position:relative;height:200px;margin-bottom:14px}
+.rec-shortcut-wrap{margin-bottom:10px}
+.rec-shortcut-wrap select{background:var(--green-bg);border-color:var(--green);color:var(--green);font-weight:500;font-family:var(--mono);font-size:12px}
+.hint{font-family:var(--mono);font-size:10px;color:var(--text3);margin-bottom:5px}
+.rec-tbl{width:100%;border-collapse:collapse}
+.rec-tbl td{padding:8px 10px;border-bottom:1px solid var(--border);font-size:13px}
+.rec-tbl tr:last-child td{border-bottom:none}
+.mono{font-family:var(--mono);font-size:12px}
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:300;align-items:center;justify-content:center;padding:16px}
+.modal-bg.open{display:flex}
+.modal{background:#fff;border:1px solid var(--border);border-radius:12px;padding:22px;width:100%;max-width:320px}
+.modal h3{font-size:14px;font-weight:500;margin-bottom:14px;font-family:var(--mono)}
+.mrow{margin-bottom:10px}
+.mrow label{font-family:var(--mono);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:4px}
+.mrow input,.mrow select{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-sm);color:var(--text);padding:7px 9px;outline:none}
+.mact{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
+.empty{text-align:center;padding:24px;color:var(--text3);font-family:var(--mono);font-size:12px}
+@media(max-width:580px){
+  .app{padding:14px 10px 60px}
+  .addbar .row{flex-direction:column}
+  .field.grow,.field.w100,.field.w120,.field.w90{width:100%}
+  .proj-detail{display:none}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<div class="hdr">
+  <div class="hdr-title">budget tracker</div>
+  <div class="sync-badge"><div class="sync-dot" id="sdot"></div><span id="stxt">chargement</span></div>
+</div>
+
+<div class="kpis" id="kpis"></div>
+
+<div class="tabs">
+  <button class="tab active" onclick="showTab('suivi')">Suivi</button>
+  <button class="tab" onclick="showTab('projection')">Projection</button>
+  <button class="tab" onclick="showTab('recurrents')">Récurrents</button>
+</div>
+
+<!-- SUIVI -->
+<div id="tab-suivi">
+  <div class="addbar">
+    <div class="hint">Raccourci — préremplir depuis un récurrent</div>
+    <div class="rec-shortcut-wrap">
+      <select id="rec-shortcut" onchange="applyShortcut()">
+        <option value="">— choisir un récurrent —</option>
+      </select>
+    </div>
+    <div class="row" style="margin-bottom:10px">
+      <div class="field grow"><label>Description</label><input id="op-desc" type="text"/></div>
+      <div class="field w100"><label>Montant €</label><input id="op-amt" type="number" min="0" step="0.01"/></div>
+      <div class="field w90"><label>Type</label>
+        <select id="op-type"><option value="debit">Dépense</option><option value="credit">Revenu</option></select>
+      </div>
+    </div>
+    <div>
+      <div class="dtog">
+        <button id="dm-single" class="on" onclick="setDM('single')">Jour précis</button>
+        <button id="dm-range" onclick="setDM('range')">Plage de dates</button>
+      </div>
+    </div>
+    <div class="row">
+      <div class="field w120" id="ws"><label>Date</label><input id="op-date" type="date"/></div>
+      <div class="field w120" id="wstart" style="display:none"><label>Du</label><input id="op-ds" type="date"/></div>
+      <div class="field w120" id="wend" style="display:none"><label>Au</label><input id="op-de" type="date"/></div>
+      <div class="field" style="margin-left:auto"><label>&nbsp;</label><button class="btn btn-primary" onclick="addOp()">+ Ajouter</button></div>
+    </div>
+  </div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr>
+        <th style="width:22px"></th>
+        <th style="width:140px">Date</th>
+        <th>Description</th>
+        <th style="width:90px">Type</th>
+        <th style="width:85px;text-align:right">Montant</th>
+        <th style="width:85px;text-align:right">Solde</th>
+        <th style="width:36px"></th>
+      </tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- PROJECTION -->
+<div id="tab-projection" style="display:none">
+  <div class="sec">
+    <div class="sec-hd"><span class="sec-ttl">Précision court terme — 30 prochains jours</span></div>
+    <div class="chart-wrap" style="height:180px"><canvas id="chartCourt" role="img" aria-label="Projection 30 jours"></canvas></div>
+  </div>
+  <div class="sec">
+    <div class="sec-hd"><span class="sec-ttl">Projection 12 mois — opérations saisies + récurrents</span></div>
+    <div class="chart-wrap"><canvas id="chart" role="img" aria-label="Projection 12 mois"></canvas></div>
+    <div id="proj-list"></div>
+  </div>
+</div>
+
+<!-- RECURRENTS -->
+<div id="tab-recurrents" style="display:none">
+  <div class="addbar" style="margin-bottom:16px">
+    <div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.07em">Solde de départ</div>
+    <div class="row">
+      <div class="field grow"><label>Montant €</label><input id="solde-inp" type="number" step="0.01"/></div>
+      <div class="field w120"><label>À la date du</label><input id="solde-date" type="date"/></div>
+      <div class="field"><label>&nbsp;</label><button class="btn btn-primary" onclick="saveSolde()">Enregistrer</button></div>
+    </div>
+  </div>
+  <div class="addbar" style="margin-bottom:16px">
+    <div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.07em">Archiver les anciennes lignes</div>
+    <div class="hint" style="margin-bottom:8px">Les lignes avant cette date sont supprimées, et le solde de départ est automatiquement recalculé pour garder le bon montant.</div>
+    <div class="row">
+      <div class="field grow"><label>Archiver tout avant le</label><input id="archive-date" type="date" onchange="resetArchiveBtn()"/></div>
+      <div class="field"><label>&nbsp;</label><button class="btn" id="archive-btn" onclick="archiveBefore()" style="border-color:var(--orange);color:var(--orange)">Archiver</button></div>
+    </div>
+    <div id="archive-msg" style="font-family:var(--mono);font-size:11px;color:var(--orange);margin-top:8px;display:none"></div>
+  </div>
+  <div class="sec">
+    <div class="sec-hd"><span class="sec-ttl">Revenus récurrents / mois</span><button class="btn btn-sm" onclick="openModal('credit')">+ Ajouter</button></div>
+    <div class="tbl-wrap" id="rct-credits"></div>
+  </div>
+  <div class="sec">
+    <div class="sec-hd"><span class="sec-ttl">Dépenses récurrentes / mois</span><button class="btn btn-sm" onclick="openModal('debit')">+ Ajouter</button></div>
+    <div class="tbl-wrap" id="rct-debits"></div>
+  </div>
+</div>
+
+</div>
+
+<div class="modal-bg" id="modal">
+  <div class="modal">
+    <h3 id="mtitle"></h3>
+    <div class="mrow"><label>Description</label><input id="m-desc" type="text"/></div>
+    <div class="mrow"><label>Montant €</label><input id="m-amt" type="number" min="0" step="0.01"/></div>
+    <input type="hidden" id="m-type"/>
+    <div class="mact">
+      <button class="btn" onclick="closeModal()">Annuler</button>
+      <button class="btn btn-primary" onclick="saveRec()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const SCRIPT_URL='https://script.google.com/macros/s/AKfycbxUaV4KOPg5tnivuLdaYCKlKj0fVX8ROXqxRgro-j3tULBdR2o7NPl56Xt1mwwIzm0/exec';
+const MONTHS=['Jan','Fév','Mar','Avr','Mai','Juin','Juil','Août','Sep','Oct','Nov','Déc'];
+let nid=300,chart=null,chartCourt=null,dragSrcIdx=null,dm='single',saveTimer=null;
+
+const SAVED={"soldeDepart":-113,"operations":[{"id":1000,"dateStart":"2026-07-21","dateEnd":null,"desc":"Dépenses semaines","type":"debit","amt":16.67,"groupId":"g456","groupLabel":"Dépenses semaines","groupRange":["2026-07-21","2026-07-26"]},{"id":1001,"dateStart":"2026-07-21","dateEnd":null,"desc":"Remboursement frejus biche","type":"credit","amt":108},{"id":1002,"dateStart":"2026-07-22","dateEnd":null,"desc":"Dépenses semaines","type":"debit","amt":16.67,"groupId":"g456","groupLabel":"Dépenses semaines","groupRange":["2026-07-21","2026-07-26"]},{"id":1003,"dateStart":"2026-07-23","dateEnd":null,"desc":"Dépenses semaines","type":"debit","amt":16.67,"groupId":"g456","groupLabel":"Dépenses semaines","groupRange":["2026-07-21","2026-07-26"]},{"id":1004,"dateStart":"2026-07-24","dateEnd":null,"desc":"Dépenses semaines","type":"debit","amt":16.67,"groupId":"g456","groupLabel":"Dépenses semaines","groupRange":["2026-07-21","2026-07-26"]},{"id":1005,"dateStart":"2026-07-25","dateEnd":null,"desc":"Dépenses semaines","type":"debit","amt":16.67,"groupId":"g456","groupLabel":"Dépenses semaines","groupRange":["2026-07-21","2026-07-26"]},{"id":1006,"dateStart":"2026-07-26","dateEnd":null,"desc":"Dépenses semaines","type":"debit","amt":16.65,"groupId":"g456","groupLabel":"Dépenses semaines","groupRange":["2026-07-21","2026-07-26"]},{"id":1007,"dateStart":"2026-07-27","dateEnd":null,"desc":"Dépenses semaines","type":"debit","amt":14.29,"groupId":"g454","groupLabel":"Dépenses semaines","groupRange":["2026-07-27","2026-08-02"]},{"id":1008,"dateStart":"2026-07-28","dateEnd":null,"desc":"Dépenses semaines","type":"debit","amt":14.29,"groupId":"g454","groupLabel":"Dépenses semaines","groupRange":["2026-07-27","2026-08-02"]},{"id":1009,"dateStart":"2026-07-28","dateEnd":null,"desc":"Remboursement come 4x","type":"debit","amt":100},{"id":1010,"dateStart":"2026-07-29","dateEnd":null,"desc":"Dépenses semaines","type":"debit","amt":14.29,"groupId":"g454","groupLabel":"Dépenses semaines","groupRange":["2026-07-27","2026-08-02"]},{"id":1011,"dateStart":"2026-07-30","dateEnd":null,"desc":"Dépenses semaines","type":"debit","amt":14.29,"groupId":"g454","groupLabel":"Dépenses semaines","groupRange":["2026-07-27","2026-08-02"]},{"id":1012,"dateStart":"2026-07-31","dateEnd":null,"desc":"Dépenses semaines","type":"debit","amt":14.29,"groupId":"g454","groupLabel":"Dépenses semaines","groupRange":["2026-07-27","2026-08-02"]},{"id":1013,"dateStart":"2026-08-01","dateEnd":null,"desc":"Dépenses semaines","type":"debit","amt":14.29,"groupId":"g454","groupLabel":"Dépenses semaines","groupRange":["2026-07-27","2026-08-02"]},{"id":1014,"dateStart":"2026-08-01","dateEnd":null,"desc":"Remboursement Biche madère","type":"credit","amt":271},{"id":1015,"dateStart":"2026-08-02","dateEnd":null,"desc":"Dépenses semaines","type":"debit","amt":14.26,"groupId":"g454","groupLabel":"Dépenses semaines","groupRange":["2026-07-27","2026-08-02"]},{"id":1016,"dateStart":"2026-08-03","dateEnd":null,"desc":"Dépenses semaines","type":"debit","amt":14.29,"groupId":"g464","groupLabel":"Dépenses semaines","groupRange":["2026-08-03","2026-08-09"]},{"id":1017,"dateStart":"2026-08-04","dateEnd":null,"desc":"Dépenses semaines","type":"debit","amt":14.29,"groupId":"g464","groupLabel":"Dépenses semaines","groupRange":["2026-08-03","2026-08-09"]},{"id":1018,"dateStart":"2026-08-05","dateEnd":null,"desc":"Dépenses semaines","type":"debit","amt":14.29,"groupId":"g464","groupLabel":"Dépenses semaines","groupRange":["2026-08-03","2026-08-09"]},{"id":1019,"dateStart":"2026-08-05","dateEnd":null,"desc":"APL + PA","type":"credit","amt":371},{"id":1020,"dateStart":"2026-08-06","dateEnd":null,"desc":"Dépenses semaines","type":"debit","amt":14.29,"groupId":"g464","groupLabel":"Dépenses semaines","groupRange":["2026-08-03","2026-08-09"]},{"id":1021,"dateStart":"2026-08-07","dateEnd":null,"desc":"Dépenses semaines","type":"debit","amt":14.29,"groupId":"g464","groupLabel":"Dépenses semaines","groupRange":["2026-08-03","2026-08-09"]},{"id":1022,"dateStart":"2026-08-08","dateEnd":null,"desc":"Dépenses semaines","type":"debit","amt":14.29,"groupId":"g464","groupLabel":"Dépenses semaines","groupRange":["2026-08-03","2026-08-09"]},{"id":1023,"dateStart":"2026-08-09","dateEnd":null,"desc":"Dépenses semaines","type":"debit","amt":14.26,"groupId":"g464","groupLabel":"Dépenses semaines","groupRange":["2026-08-03","2026-08-09"]},{"id":1024,"dateStart":"2026-08-10","dateEnd":null,"desc":"Salaire","type":"credit","amt":1450},{"id":1025,"dateStart":"2026-08-12","dateEnd":null,"desc":"Mobili Jeune","type":"credit","amt":100}],"recurrents":{"credit":[{"id":"r3","desc":"Mobili Jeune","amt":100},{"id":"r100","desc":"APL + PA","amt":378},{"id":"r454","desc":"Salaire","amt":1450}],"debit":[{"id":"r4","desc":"Loyer","amt":525},{"id":"r455","desc":"Dépenses semaines","amt":140}]},"futures":[],"soldeDateRef":"2026-07-21"};
+
+let state=JSON.parse(JSON.stringify(SAVED));
+state.operations=migrateRangesToDaily(state.operations);
+
+// Calcule le prochain ID sûr à partir des données réellement chargées,
+// pour ne JAMAIS repartir d'un compteur fixe qui recréerait des doublons
+// entre deux sessions différentes.
+function resyncNidFromState(){
+  let maxNum=nid;
+  state.operations.forEach(op=>{
+    if(typeof op.id==='number'&&op.id>maxNum)maxNum=op.id;
+    if(op.groupId){
+      const n=parseInt(op.groupId.replace(/^g/,''),10);
+      if(!isNaN(n)&&n>maxNum)maxNum=n;
+    }
+  });
+  ['credit','debit'].forEach(t=>{
+    (state.recurrents[t]||[]).forEach(r=>{
+      const n=parseInt(String(r.id).replace(/^r/,''),10);
+      if(!isNaN(n)&&n>maxNum)maxNum=n;
+    });
+  });
+  (state.futures||[]).forEach(f=>{
+    if(typeof f.id==='number'&&f.id>maxNum)maxNum=f.id;
+  });
+  nid=maxNum+1;
+}
+resyncNidFromState();
+
+// ── Sync ──────────────────────────────────────────────────────────────────
+function setSync(msg,cls){
+  document.getElementById('stxt').textContent=msg;
+  document.getElementById('sdot').className='sync-dot'+(cls?' '+cls:'');
+}
+async function loadRemote(){
+  setSync('chargement...','spin');
+  try{
+    const r=await fetch(SCRIPT_URL+'?action=load');
+    const j=await r.json();
+    if(j.status==='ok'&&j.data&&j.data!=='{}'){
+      const p=JSON.parse(j.data);
+      if(p&&p.operations){state=p;state.operations=migrateRangesToDaily(state.operations);resyncNidFromState();localStorage.setItem('bk',JSON.stringify(state));}
+    }
+    setSync('synchronisé','');
+  }catch(e){
+    const bk=localStorage.getItem('bk');
+    if(bk)try{state=JSON.parse(bk);resyncNidFromState();}catch(e){}
+    setSync('hors ligne','warn');
+  }
+  render();
+  const tabSuivi=document.getElementById('tab-suivi');
+  tabSuivi.style.opacity='';
+  tabSuivi.style.pointerEvents='';
+}
+let saveRetryCount=0;
+function save(){
+  localStorage.setItem('bk',JSON.stringify(state));
+  setSync('sauvegarde...','spin');
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(()=>doSave(),900);
+}
+
+async function doSave(){
+  const payload=JSON.stringify(state);
+  try{
+    // Envoi via formulaire (pas de preflight CORS, fonctionne dans iframe)
+    const res=await fetch(SCRIPT_URL+'?action=save',{
+      method:'POST',
+      body:'data='+encodeURIComponent(payload),
+      headers:{'Content-Type':'application/x-www-form-urlencoded'}
+    });
+    const json=await res.json();
+    if(json.status==='ok'){
+      saveRetryCount=0;
+      setSync('synchronisé','');
+      hideErrorBanner();
+    } else {
+      throw new Error(json.message||'réponse invalide');
+    }
+  }catch(e){
+    saveRetryCount++;
+    if(saveRetryCount<3){
+      setSync('nouvelle tentative...','warn');
+      setTimeout(()=>doSave(),2000);
+    } else {
+      setSync('ÉCHEC sync','err');
+      showErrorBanner();
+    }
+  }
+}
+
+function showErrorBanner(){
+  let banner=document.getElementById('sync-error-banner');
+  if(!banner){
+    banner=document.createElement('div');
+    banner.id='sync-error-banner';
+    banner.style.cssText='position:sticky;top:0;z-index:50;background:var(--red-bg);color:var(--red);border:1px solid var(--red);border-radius:8px;padding:10px 14px;margin-bottom:14px;font-family:var(--mono);font-size:12px;';
+    banner.textContent="⚠ La sauvegarde en ligne échoue. Tes données restent sur CET appareil (localStorage) mais ne sont pas synchronisées avec le Google Sheet. Ne ferme pas cet onglet sans avoir résolu le souci — recharge la page pour réessayer, ou vérifie ton déploiement Apps Script.";
+    document.querySelector('.app').prepend(banner);
+  }
+}
+function hideErrorBanner(){
+  const banner=document.getElementById('sync-error-banner');
+  if(banner)banner.remove();
+}
+
+// ── Utils ─────────────────────────────────────────────────────────────────
+function fmt(n){return new Intl.NumberFormat('fr-FR',{style:'currency',currency:'EUR',maximumFractionDigits:2}).format(n)}
+function fmtD(iso){if(!iso)return'';const[y,m,j]=iso.split('-');return`${j}/${m}/${y}`}
+function today(){const n=new Date();return`${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`}
+
+// Opération passée ou présente = date <= aujourd'hui
+function isPast(op){return op.dateStart<=today();}
+
+// Date utils pour itérer jour par jour
+function dateAdd(iso,days){
+  const d=new Date(iso+'T00:00:00');
+  d.setDate(d.getDate()+days);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function daysBetween(a,b){
+  return Math.round((new Date(b+'T00:00:00')-new Date(a+'T00:00:00'))/86400000);
+}
+
+// Transforme chaque opération en mouvements journaliers (plage = montant/jours réparti)
+// Retourne une liste plate {date, amt(signé), desc, origIdx}
+function expandToDaily(ops){
+  const out=[];
+  ops.forEach((op,idx)=>{
+    const signedAmt=op.type==='credit'?op.amt:-op.amt;
+    if(op.dateEnd && op.dateEnd!==op.dateStart){
+      const nbDays=daysBetween(op.dateStart,op.dateEnd)+1;
+      const perDay=signedAmt/nbDays;
+      for(let i=0;i<nbDays;i++){
+        out.push({date:dateAdd(op.dateStart,i),amt:perDay,desc:op.desc,origIdx:idx});
+      }
+    } else {
+      out.push({date:op.dateStart,amt:signedAmt,desc:op.desc,origIdx:idx});
+    }
+  });
+  return out;
+}
+
+// Migration : éclate physiquement toute opération "plage" en lignes journalières réelles
+// (appelé une fois au chargement pour que les anciennes données plages deviennent cohérentes)
+function migrateRangesToDaily(ops){
+  const out=[];
+  ops.forEach(op=>{
+    if(op.dateEnd && op.dateEnd!==op.dateStart){
+      const groupId='g'+(nid++);
+      const nbDays=daysBetween(op.dateStart,op.dateEnd)+1;
+      const perDay=Math.round((op.amt/nbDays)*100)/100;
+      let totalSoFar=0;
+      for(let i=0;i<nbDays;i++){
+        const dDate=dateAdd(op.dateStart,i);
+        let dAmt=perDay;
+        if(i===nbDays-1) dAmt=Math.round((op.amt-totalSoFar)*100)/100;
+        else totalSoFar+=perDay;
+        out.push({id:nid++,dateStart:dDate,dateEnd:null,desc:op.desc,type:op.type,amt:dAmt,groupId,groupLabel:op.desc,groupRange:[op.dateStart,op.dateEnd]});
+      }
+    } else {
+      out.push({...op,dateEnd:null});
+    }
+  });
+  // Trier chronologiquement
+  out.sort((a,b)=>a.dateStart<b.dateStart?-1:a.dateStart>b.dateStart?1:0);
+  return out;
+}
+
+// Solde actuel = soldeDepart + toutes les ops passées/présentes (réparties jour par jour)
+function currentSolde(){
+  const t=today();
+  const daily=expandToDaily(state.operations).filter(d=>d.date<=t);
+  return daily.reduce((s,d)=>s+d.amt, state.soldeDepart);
+}
+
+// Solde à une date précise (inclus), pour graphe jour par jour court terme
+function soldeAtDate(targetDate){
+  const daily=expandToDaily(state.operations).filter(d=>d.date<=targetDate);
+  return daily.reduce((s,d)=>s+d.amt, state.soldeDepart);
+}
+
+// ── KPIs ──────────────────────────────────────────────────────────────────
+function renderKPIs(){
+  const s=currentSolde();
+  const ri=state.recurrents.credit.reduce((a,r)=>a+r.amt,0);
+  const ro=state.recurrents.debit.reduce((a,r)=>a+r.amt,0);
+  const ep=ri-ro;
+  const soldeDateLabel=state.soldeDateRef?` (depuis ${fmtD(state.soldeDateRef)})`:'';
+  document.getElementById('kpis').innerHTML=`
+    <div class="kpi"><div class="kpi-label">Solde actuel</div><div class="kpi-val ${s>=0?'pos':'neg'}">${fmt(s)}</div></div>
+    <div class="kpi"><div class="kpi-label">Revenus récurrents</div><div class="kpi-val">${fmt(ri)}</div></div>
+    <div class="kpi"><div class="kpi-label">Dépenses récurrentes</div><div class="kpi-val">${fmt(ro)}</div></div>
+    <div class="kpi"><div class="kpi-label">Épargne / mois</div><div class="kpi-val ${ep>=0?'pos':'neg'}">${fmt(ep)}</div></div>
+  `;
+}
+
+// ── Raccourcis ────────────────────────────────────────────────────────────
+function renderShortcuts(){
+  const sel=document.getElementById('rec-shortcut');
+  const all=[
+    ...state.recurrents.credit.map(r=>({...r,type:'credit'})),
+    ...state.recurrents.debit.map(r=>({...r,type:'debit'}))
+  ];
+  sel.innerHTML='<option value="">— choisir un récurrent —</option>'+
+    all.map(r=>`<option value="${r.id}" data-desc="${r.desc}" data-amt="${r.amt}" data-type="${r.type}">${r.desc} (${r.type==='credit'?'+':'−'}${fmt(r.amt)})</option>`).join('');
+}
+function applyShortcut(){
+  const sel=document.getElementById('rec-shortcut');
+  const opt=sel.options[sel.selectedIndex];
+  if(!opt.value)return;
+  document.getElementById('op-desc').value=opt.dataset.desc;
+  document.getElementById('op-amt').value=opt.dataset.amt;
+  document.getElementById('op-type').value=opt.dataset.type;
+  sel.value='';
+}
+
+// ── Suivi ─────────────────────────────────────────────────────────────────
+let openGroups=new Set(); // groupIds actuellement ouverts
+
+function renderOps(){
+  const tb=document.getElementById('tbody');
+  if(!state.operations.length){tb.innerHTML=`<tr><td colspan="7"><div class="empty">— aucun mouvement —</div></td></tr>`;return;}
+  const t=today();
+  let run=state.soldeDepart;
+  let todayDividerInserted=false;
+  tb.innerHTML='';
+
+  // Pré-calcule les totaux par groupe (montant net signé, somme simple)
+  const groupTotals={}; // groupId -> {amt,type,count,first,last,label,range}
+  state.operations.forEach(op=>{
+    if(!op.groupId)return;
+    if(!groupTotals[op.groupId])groupTotals[op.groupId]={amt:0,type:op.type,count:0,label:op.groupLabel||op.desc,range:op.groupRange};
+    groupTotals[op.groupId].amt+=op.amt;
+    groupTotals[op.groupId].count++;
+  });
+
+  let i=0;
+  while(i<state.operations.length){
+    const op=state.operations[i];
+
+    // Séparateur "aujourd'hui"
+    if(!todayDividerInserted && op.dateStart>t){
+      todayDividerInserted=true;
+      const div=document.createElement('tr');
+      div.className='divider-today';
+      div.innerHTML=`<td colspan="7"><div class="divider-inner">▸ À partir d'ici — prévisionnel</div></td>`;
+      tb.appendChild(div);
+    }
+
+    if(op.groupId){
+      // Trouver toutes les lignes consécutives du même groupe
+      const gid=op.groupId;
+      const groupStartIdx=i;
+      let j=i;
+      while(j<state.operations.length && state.operations[j].groupId===gid){j++;}
+      const groupOps=state.operations.slice(groupStartIdx,j);
+      const g=groupTotals[gid];
+      const isOpen=openGroups.has(gid);
+
+      // Calcule le solde de fin de groupe (après toutes ses lignes)
+      let runAfterGroup=run;
+      groupOps.forEach(o=>{runAfterGroup=o.type==='credit'?runAfterGroup+o.amt:runAfterGroup-o.amt;});
+      const groupIsFuture=op.dateStart>t;
+
+      // Ligne d'en-tête du groupe
+      const head=document.createElement('tr');
+      head.className='group-head'+(groupIsFuture?' future-row':'');
+      head.innerHTML=`
+        <td><div class="cell"><button class="grp-toggle" onclick="toggleGroup('${gid}')">${isOpen?'▾':'▸'}</button></div></td>
+        <td><div class="cell"><span class="badge-range${groupIsFuture?' future':''}">${groupIsFuture?'⏳':'📅'} ${fmtD(g.range[0])} → ${fmtD(g.range[1])}</span></div></td>
+        <td><div class="cell" style="font-size:13px">${g.label} <span style="color:var(--text3);font-family:var(--mono);font-size:11px">(${g.count}j)</span></div></td>
+        <td><div class="cell"><div class="ttog"><button class="${g.type==='debit'?'dep':'rev'}">${g.type==='debit'?'Dép.':'Rev.'}</button></div></div></td>
+        <td><div class="cell" style="justify-content:flex-end"><span class="${g.type==='credit'?'amt-rev':'amt-dep'}" style="font-weight:500">${g.amt.toFixed(2)}</span></div></td>
+        <td><div class="cell solde ${runAfterGroup>=0?'pos':'neg'}" style="justify-content:flex-end">${fmt(runAfterGroup)}</div></td>
+        <td><div class="cell"><button class="btn btn-ghost btn-sm" onclick="delGroup('${gid}')">✕</button></div></td>
+      `;
+      tb.appendChild(head);
+
+      // Sous-lignes (visibles seulement si ouvert)
+      groupOps.forEach((subOp)=>{
+        const realIdx=state.operations.indexOf(subOp);
+        run=subOp.type==='credit'?run+subOp.amt:run-subOp.amt;
+        const isFuture=subOp.dateStart>t;
+        const tr=document.createElement('tr');
+        tr.dataset.idx=realIdx;
+        tr.className='sub-row'+(isOpen?'':' sub-hidden')+(isFuture?' future-row':'');
+        tr.innerHTML=`
+          <td><div class="cell"><span class="handle sub-handle">⠿</span></div></td>
+          <td><div class="cell"><div class="editable date-txt" contenteditable="true" onblur="editF(${realIdx},'dateStart',this)">${fmtD(subOp.dateStart)}</div></div></td>
+          <td><div class="cell"><div class="editable" contenteditable="true" onblur="editF(${realIdx},'desc',this)" style="font-family:var(--sans);font-size:12px;color:var(--text2)">${subOp.desc}</div></div></td>
+          <td><div class="cell"><div class="ttog">
+            <button class="${subOp.type==='debit'?'dep':''}" onmousedown="togType(${realIdx},'debit')">Dép.</button>
+            <button class="${subOp.type==='credit'?'rev':''}" onmousedown="togType(${realIdx},'credit')">Rev.</button>
+          </div></div></td>
+          <td><div class="cell" style="justify-content:flex-end"><div class="editable ${subOp.type==='credit'?'amt-rev':'amt-dep'}" contenteditable="true" onblur="editF(${realIdx},'amt',this)" style="text-align:right;min-width:45px">${subOp.amt.toFixed(2)}</div></div></td>
+          <td><div class="cell solde ${run>=0?'pos':'neg'}" style="justify-content:flex-end;font-size:11px">${fmt(run)}</div></td>
+          <td><div class="cell"><button class="btn btn-ghost btn-sm" onmousedown="delOp(${realIdx})">✕</button></div></td>
+        `;
+        tb.appendChild(tr);
+      });
+
+      i=j;
+    } else {
+      // Ligne normale, pas de groupe
+      run=op.type==='credit'?run+op.amt:run-op.amt;
+      const isFuture=op.dateStart>t;
+      const tr=document.createElement('tr');
+      tr.dataset.idx=i;
+      if(isFuture)tr.classList.add('future-row');
+
+      const dateHtml=`<div class="editable date-txt" contenteditable="true" onblur="editF(${i},'dateStart',this)">${fmtD(op.dateStart)}</div>`;
+
+      tr.innerHTML=`
+        <td><div class="cell"><span class="handle">⠿</span></div></td>
+        <td><div class="cell">${dateHtml}</div></td>
+        <td><div class="cell"><div class="editable" contenteditable="true" onblur="editF(${i},'desc',this)" style="font-family:var(--sans);font-size:13px">${op.desc}</div></div></td>
+        <td><div class="cell"><div class="ttog">
+          <button class="${op.type==='debit'?'dep':''}" onmousedown="togType(${i},'debit')">Dép.</button>
+          <button class="${op.type==='credit'?'rev':''}" onmousedown="togType(${i},'credit')">Rev.</button>
+        </div></div></td>
+        <td><div class="cell" style="justify-content:flex-end"><div class="editable ${op.type==='credit'?'amt-rev':'amt-dep'}" contenteditable="true" onblur="editF(${i},'amt',this)" style="text-align:right;min-width:45px">${op.amt.toFixed(2)}</div></div></td>
+        <td><div class="cell solde ${isFuture?'':run>=0?'pos':'neg'}" style="justify-content:flex-end">${fmt(run)}</div></td>
+        <td><div class="cell"><button class="btn btn-ghost btn-sm" onmousedown="delOp(${i})">✕</button></div></td>
+      `;
+      tr.draggable=true;
+      tr.addEventListener('dragstart',dragStart);
+      tr.addEventListener('dragover',dragOver);
+      tr.addEventListener('drop',onDrop);
+      tr.addEventListener('dragend',dragEnd);
+      tb.appendChild(tr);
+      i++;
+    }
+  }
+}
+
+function toggleGroup(gid){
+  if(openGroups.has(gid))openGroups.delete(gid);
+  else openGroups.add(gid);
+  renderOps();
+}
+
+function delGroup(gid){
+  setTimeout(()=>{
+    state.operations=state.operations.filter(o=>o.groupId!==gid);
+    render();save();
+  },10);
+}
+
+function editF(idx,field,el){
+  const op=state.operations[idx];if(!op)return;
+  const v=el.innerText.trim().replace(/\s+/g,'');
+  if(field==='amt'){const n=parseFloat(v.replace(',','.'));if(!isNaN(n)&&n>0)op.amt=n;}
+  else if(field==='dateStart'){const p=v.split('/');if(p.length===3&&p[0]&&p[1]&&p[2])op.dateStart=`${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`;}
+  else if(field==='desc'){const dv=el.innerText.trim();if(dv)op.desc=dv;}
+  render();save();
+}
+function togType(idx,t){setTimeout(()=>{const op=state.operations[idx];if(op){op.type=t;render();save();}},10);}
+function delOp(idx){setTimeout(()=>{state.operations.splice(idx,1);render();save();},10);}
+function addOp(){
+  const desc=document.getElementById('op-desc').value.trim();
+  const amt=parseFloat(document.getElementById('op-amt').value);
+  const type=document.getElementById('op-type').value;
+  if(!desc||isNaN(amt)||amt<=0)return;
+  let ds,de=null;
+  if(dm==='single'){ds=document.getElementById('op-date').value||today();}
+  else{ds=document.getElementById('op-ds').value||today();de=document.getElementById('op-de').value||ds;if(de===ds)de=null;}
+
+  if(de){
+    // Plage de dates → on subdivise en lignes journalières (montant réparti)
+    const groupId='g'+(nid++);
+    const nbDays=daysBetween(ds,de)+1;
+    const perDay=Math.round((amt/nbDays)*100)/100;
+    // Ajuster le dernier jour pour que la somme soit exacte (arrondis)
+    let totalSoFar=0;
+    for(let i=0;i<nbDays;i++){
+      const dDate=dateAdd(ds,i);
+      let dAmt=perDay;
+      if(i===nbDays-1) dAmt=Math.round((amt-totalSoFar)*100)/100;
+      else totalSoFar+=perDay;
+      const idx=state.operations.findIndex(o=>o.dateStart>dDate);
+      const op={id:nid++,dateStart:dDate,dateEnd:null,desc,type,amt:dAmt,groupId,groupLabel:desc,groupRange:[ds,de]};
+      if(idx===-1)state.operations.push(op);
+      else state.operations.splice(idx,0,op);
+    }
+  } else {
+    const idx=state.operations.findIndex(o=>o.dateStart>ds);
+    const op={id:nid++,dateStart:ds,dateEnd:null,desc,type,amt};
+    if(idx===-1)state.operations.push(op);
+    else state.operations.splice(idx,0,op);
+  }
+
+  document.getElementById('op-desc').value='';
+  document.getElementById('op-amt').value='';
+  render();save();
+}
+
+// ── Drag & drop ───────────────────────────────────────────────────────────
+function dragStart(e){dragSrcIdx=parseInt(e.currentTarget.dataset.idx);e.currentTarget.classList.add('dragging');e.dataTransfer.effectAllowed='move';}
+function dragOver(e){
+  e.preventDefault();e.dataTransfer.dropEffect='move';
+  document.querySelectorAll('#tbody tr[data-idx]').forEach(r=>r.classList.remove('over'));
+  const ti=parseInt(e.currentTarget.dataset.idx);
+  if(!isNaN(ti)&&ti!==dragSrcIdx)e.currentTarget.classList.add('over');
+}
+function onDrop(e){
+  e.preventDefault();
+  const ti=parseInt(e.currentTarget.dataset.idx);
+  if(dragSrcIdx===null||isNaN(ti)||dragSrcIdx===ti)return;
+  const[rem]=state.operations.splice(dragSrcIdx,1);
+  state.operations.splice(ti,0,rem);
+  dragSrcIdx=null;render();save();
+}
+function dragEnd(){document.querySelectorAll('#tbody tr').forEach(r=>{r.classList.remove('dragging');r.classList.remove('over');});dragSrcIdx=null;}
+
+// ── Date mode ─────────────────────────────────────────────────────────────
+function setDM(m){
+  dm=m;
+  document.getElementById('dm-single').classList.toggle('on',m==='single');
+  document.getElementById('dm-range').classList.toggle('on',m==='range');
+  document.getElementById('ws').style.display=m==='single'?'flex':'none';
+  document.getElementById('wstart').style.display=m==='range'?'flex':'none';
+  document.getElementById('wend').style.display=m==='range'?'flex':'none';
+}
+
+// ── Projection ────────────────────────────────────────────────────────────
+// Part du solde actuel (ops passées), applique les ops futures saisies,
+// puis pour chaque mois comble avec les récurrents si pas déjà couverts
+// Projection court terme jour par jour (30 jours) — précis, avec répartition des plages
+function renderProjectionCourt(){
+  const t=today();
+  const ri=state.recurrents.credit.reduce((a,r)=>a+r.amt,0);
+  const ro=state.recurrents.debit.reduce((a,r)=>a+r.amt,0);
+  const recDailyNet=(ri-ro)/30; // lissage très approximatif si aucune autre donnée — mais on n'applique les récurrents qu'aux dates réelles si possible
+  const daily=expandToDaily(state.operations);
+
+  const labels=[],data=[];
+  let run=currentSolde();
+  const startIdx=daily.findIndex(d=>d.date>t);
+  // On reconstruit run au jour J (today) puis on avance jour par jour sur 30 jours
+  let cursor=t;
+  for(let i=0;i<30;i++){
+    const dateStr=dateAdd(t,i);
+    const dayOps=daily.filter(d=>d.date===dateStr && dateStr>t); // ops déjà comptées dans currentSolde si <= t
+    if(i>0){
+      dayOps.forEach(d=>run+=d.amt);
+    }
+    labels.push(fmtD(dateStr).slice(0,5));
+    data.push(Math.round(run*100)/100);
+  }
+
+  if(chartCourt)chartCourt.destroy();
+  const ctxC=document.getElementById('chartCourt').getContext('2d');
+  chartCourt=new Chart(ctxC,{
+    type:'line',
+    data:{labels,datasets:[{label:'Solde',data,
+      borderColor:'#1a4fa0',backgroundColor:'rgba(26,79,160,0.06)',
+      tension:.3,fill:true,
+      pointBackgroundColor:data.map(v=>v>=0?'#1a4fa0':'#c0392b'),
+      pointRadius:2,pointBorderColor:'transparent'}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmt(c.raw)}}},
+      scales:{
+        y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:'#aaa',font:{family:'IBM Plex Mono',size:10},callback:v=>fmt(v)},border:{color:'transparent'}},
+        x:{grid:{display:false},ticks:{color:'#aaa',font:{family:'IBM Plex Mono',size:9},maxRotation:60,autoSkip:true,maxTicksLimit:10},border:{color:'rgba(0,0,0,0.1)'}}
+      }
+    }
+  });
+}
+
+function renderProjection(){
+  const t=today();
+  const now=new Date();
+  const ri=state.recurrents.credit.reduce((a,r)=>a+r.amt,0);
+  const ro=state.recurrents.debit.reduce((a,r)=>a+r.amt,0);
+
+  // On part du solde actuel
+  let run=currentSolde();
+
+  // Toutes les ops futures (dateStart > today), groupées par mois
+  const futureOps=state.operations.filter(o=>o.dateStart>t);
+  const opsByMonth={};
+  futureOps.forEach(o=>{
+    const key=o.dateStart.slice(0,7); // "2026-07"
+    if(!opsByMonth[key])opsByMonth[key]=[];
+    opsByMonth[key].push(o);
+  });
+
+  const labels=[],data=[],months=[];
+  for(let i=0;i<12;i++){
+    const d=new Date(now.getFullYear(),now.getMonth()+i,1);
+    const key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    const opsThisMonth=opsByMonth[key]||[];
+    const hasOps=opsThisMonth.length>0;
+
+    // Appliquer les ops futures saisies pour ce mois
+    let opsTotal=0;
+    opsThisMonth.forEach(o=>{
+      const delta=o.type==='credit'?o.amt:-o.amt;
+      run+=delta;opsTotal+=delta;
+    });
+
+    // Appliquer les récurrents pour ce mois (toujours)
+    run+=ri-ro;
+
+    const label=MONTHS[d.getMonth()]+' '+String(d.getFullYear()).slice(2);
+    labels.push(label);
+    data.push(Math.round(run));
+    months.push({label,val:Math.round(run),hasOps,opsCount:opsThisMonth.length});
+  }
+
+  if(chart)chart.destroy();
+  const ctx=document.getElementById('chart').getContext('2d');
+  chart=new Chart(ctx,{
+    type:'line',
+    data:{labels,datasets:[{label:'Solde',data,
+      borderColor:'#0d7a4e',backgroundColor:'rgba(13,122,78,0.06)',
+      tension:.4,fill:true,
+      pointBackgroundColor:data.map(v=>v>=0?'#0d7a4e':'#c0392b'),
+      pointRadius:4,pointBorderColor:'transparent'}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmt(c.raw)}}},
+      scales:{
+        y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:'#aaa',font:{family:'IBM Plex Mono',size:11},callback:v=>fmt(v)},border:{color:'transparent'}},
+        x:{grid:{display:false},ticks:{color:'#aaa',font:{family:'IBM Plex Mono',size:11}},border:{color:'rgba(0,0,0,0.1)'}}
+      }
+    }
+  });
+  const mx=Math.max(...data.map(Math.abs),1);
+  document.getElementById('proj-list').innerHTML=months.map(m=>`
+    <div class="proj-item">
+      <span class="proj-mon">${m.label}</span>
+      <div class="proj-bg"><div class="proj-fill" style="width:${Math.abs(m.val)/mx*100}%;background:${m.val>=0?'var(--green)':'var(--red)'}"></div></div>
+      <span class="proj-v" style="color:${m.val>=0?'var(--green)':'var(--red)'}">${fmt(m.val)}</span>
+      <span class="proj-detail">${m.opsCount>0?`+ ${m.opsCount} op${m.opsCount>1?'s':''} saisie${m.opsCount>1?'s':''}`:''}</span>
+    </div>`).join('');
+}
+
+// ── Récurrents ────────────────────────────────────────────────────────────
+function renderRec(){
+  const si=document.getElementById('solde-inp');
+  const sd=document.getElementById('solde-date');
+  if(si)si.value=state.soldeDepart;
+  if(sd)sd.value=state.soldeDateRef||today();
+  ['credit','debit'].forEach(type=>{
+    const el=document.getElementById(type==='credit'?'rct-credits':'rct-debits');
+    const list=state.recurrents[type];
+    if(!list.length){el.innerHTML=`<div class="empty">— aucun —</div>`;return;}
+    el.innerHTML=`<table class="rec-tbl"><tbody>${list.map(r=>`<tr>
+      <td>${r.desc}</td>
+      <td style="text-align:right"><span class="mono">${fmt(r.amt)}</span></td>
+      <td style="width:36px;text-align:right"><button class="btn btn-ghost btn-sm" onclick="delRec('${r.id}','${type}')">✕</button></td>
+    </tr>`).join('')}</tbody></table>`;
+  });
+  renderShortcuts();
+}
+function saveSolde(){
+  const v=parseFloat(document.getElementById('solde-inp').value);
+  const d=document.getElementById('solde-date').value;
+  if(!isNaN(v)){state.soldeDepart=v;if(d)state.soldeDateRef=d;render();save();}
+}
+
+// Archive : recalcule le solde de départ avec tout l'historique avant la date,
+// puis supprime ces lignes et avance la référence du solde de départ
+let archivePending=false;
+function resetArchiveBtn(){
+  archivePending=false;
+  const btn=document.getElementById('archive-btn');
+  if(btn)btn.textContent='Archiver';
+  const msg=document.getElementById('archive-msg');
+  if(msg)msg.style.display='none';
+}
+function archiveBefore(){
+  const cutoff=document.getElementById('archive-date').value;
+  if(!cutoff)return;
+
+  if(!archivePending){
+    // Premier clic : demande confirmation dans la page (pas de popup, bloquée en iframe)
+    archivePending=true;
+    const btn=document.getElementById('archive-btn');
+    btn.textContent='Confirmer ?';
+    const msg=document.getElementById('archive-msg');
+    msg.style.display='block';
+    msg.textContent=`Clique à nouveau pour confirmer : tout avant le ${fmtD(cutoff)} sera supprimé et le solde de départ recalculé.`;
+    return;
+  }
+
+  // Deuxième clic : exécution réelle
+  archivePending=false;
+  const dayBefore=dateAdd(cutoff,-1);
+  const newSoldeDepart=soldeAtDate(dayBefore);
+
+  state.operations=state.operations.filter(o=>{
+    const endRef=o.dateEnd||o.dateStart;
+    return endRef>=cutoff;
+  });
+
+  state.soldeDepart=Math.round(newSoldeDepart*100)/100;
+  state.soldeDateRef=cutoff;
+  document.getElementById('archive-date').value='';
+  document.getElementById('archive-btn').textContent='Archiver';
+  document.getElementById('archive-msg').style.display='none';
+  render();save();
+}
+function openModal(type){
+  document.getElementById('m-type').value=type;
+  document.getElementById('mtitle').textContent=type==='credit'?'Revenu récurrent':'Dépense récurrente';
+  document.getElementById('m-desc').value='';document.getElementById('m-amt').value='';
+  document.getElementById('modal').classList.add('open');
+}
+function closeModal(){document.getElementById('modal').classList.remove('open');}
+function saveRec(){
+  const desc=document.getElementById('m-desc').value.trim();
+  const amt=parseFloat(document.getElementById('m-amt').value);
+  const type=document.getElementById('m-type').value;
+  if(!desc||isNaN(amt))return;
+  state.recurrents[type].push({id:'r'+nid++,desc,amt});
+  closeModal();render();save();
+}
+function delRec(id,type){state.recurrents[type]=state.recurrents[type].filter(r=>r.id!==id);render();save();}
+document.getElementById('modal').addEventListener('click',e=>{if(e.target===document.getElementById('modal'))closeModal();});
+
+// ── Tabs ──────────────────────────────────────────────────────────────────
+function showTab(t){
+  ['suivi','projection','recurrents'].forEach(id=>{document.getElementById('tab-'+id).style.display=id===t?'block':'none';});
+  document.querySelectorAll('.tab').forEach((el,i)=>{el.classList.toggle('active',['suivi','projection','recurrents'][i]===t);});
+  if(t==='projection'){setTimeout(()=>{renderProjectionCourt();renderProjection();},50);}
+}
+
+// ── Render & Init ─────────────────────────────────────────────────────────
+function render(){renderKPIs();renderOps();renderRec();}
+
+(function(){
+  const t=today();
+  ['op-date','op-ds','op-de'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=t;});
+  // N'affiche PAS les données codées en dur : masque l'app le temps de charger le vrai état
+  document.getElementById('tab-suivi').style.opacity='0.3';
+  document.getElementById('tab-suivi').style.pointerEvents='none';
+  loadRemote();
+})();
+</script>
+</body>
+</html>
