@@ -223,6 +223,15 @@ tbody tr.future-row{}
     </div>
     <div id="archive-msg" style="font-family:var(--mono);font-size:11px;color:var(--orange);margin-top:8px;display:none"></div>
   </div>
+  <div class="addbar" style="margin-bottom:16px">
+    <div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.07em">Ajouter tous les récurrents d'un mois</div>
+    <div class="hint" style="margin-bottom:8px">Insère d'un coup chaque récurrent qui a un "jour du mois" défini ci-dessous, à la bonne date.</div>
+    <div class="row">
+      <div class="field grow"><label>Mois (mm/aaaa)</label><input id="fill-month" type="text" maxlength="7"/></div>
+      <div class="field"><label>&nbsp;</label><button class="btn btn-primary" onclick="addAllRecurrentsForMonth()">+ Ajouter le mois</button></div>
+    </div>
+    <div id="fill-msg" style="font-family:var(--mono);font-size:11px;color:var(--green);margin-top:8px;display:none"></div>
+  </div>
   <div class="sec">
     <div class="sec-hd"><span class="sec-ttl">Revenus récurrents / mois</span><button class="btn btn-sm" onclick="openModal('credit')">+ Ajouter</button></div>
     <div class="tbl-wrap" id="rct-credits"></div>
@@ -806,10 +815,67 @@ function renderRec(){
     el.innerHTML=`<table class="rec-tbl"><tbody>${list.map(r=>`<tr>
       <td>${r.desc}</td>
       <td style="text-align:right"><span class="mono">${fmt(r.amt)}</span></td>
+      <td style="width:90px">
+        <div style="display:flex;align-items:center;gap:4px">
+          <span style="font-family:var(--mono);font-size:10px;color:var(--text3)">jour</span>
+          <input type="number" min="1" max="31" value="${r.day||''}" placeholder="—"
+            style="width:44px;padding:3px 5px;font-family:var(--mono);font-size:12px;border:1px solid var(--border);border-radius:4px;background:var(--bg2);color:var(--text)"
+            onchange="setRecDay('${r.id}','${type}',this.value)"/>
+        </div>
+      </td>
       <td style="width:36px;text-align:right"><button class="btn btn-ghost btn-sm" onclick="delRec('${r.id}','${type}')">✕</button></td>
     </tr>`).join('')}</tbody></table>`;
   });
   renderShortcuts();
+}
+function setRecDay(id,type,val){
+  const r=state.recurrents[type].find(x=>x.id===id);
+  if(!r)return;
+  const n=parseInt(val,10);
+  r.day=(!isNaN(n)&&n>=1&&n<=31)?n:null;
+  save();
+}
+
+function daysInMonth(year,month){ // month: 1-12
+  return new Date(year,month,0).getDate();
+}
+
+function addAllRecurrentsForMonth(){
+  const monthStr=document.getElementById('fill-month').value; // "mm/aaaa"
+  const parts=monthStr.split('/');
+  if(parts.length!==2)return;
+  const mm=parseInt(parts[0],10), yyyy=parseInt(parts[1],10);
+  if(isNaN(mm)||isNaN(yyyy)||mm<1||mm>12)return;
+
+  const maxDay=daysInMonth(yyyy,mm);
+  const yearMonthKey=`${yyyy}-${String(mm).padStart(2,'0')}`;
+  let added=0, skipped=0;
+
+  ['credit','debit'].forEach(type=>{
+    state.recurrents[type].forEach(r=>{
+      if(!r.day)return; // pas de jour défini, on saute
+      const day=Math.min(r.day,maxDay);
+      const dateStr=`${yyyy}-${String(mm).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+
+      // Évite les doublons : même description + même mois déjà présent
+      const exists=state.operations.some(o=>o.desc===r.desc && o.dateStart&&o.dateStart.startsWith(yearMonthKey));
+      if(exists){skipped++;return;}
+
+      const idx=state.operations.findIndex(o=>o.dateStart>dateStr);
+      const op={id:nid++,dateStart:dateStr,dateEnd:null,desc:r.desc,type,amt:r.amt};
+      if(idx===-1)state.operations.push(op);
+      else state.operations.splice(idx,0,op);
+      added++;
+    });
+  });
+
+  render();save();
+  const msgEl=document.getElementById('fill-msg');
+  if(msgEl){
+    msgEl.style.display='block';
+    msgEl.textContent=`${added} récurrent(s) ajouté(s)${skipped>0?`, ${skipped} déjà présent(s) ignoré(s)`:''} pour ${String(mm).padStart(2,'0')}/${yyyy}.`;
+    setTimeout(()=>{msgEl.style.display='none';},4000);
+  }
 }
 function saveSolde(){
   const v=parseFloat(document.getElementById('solde-inp').value);
